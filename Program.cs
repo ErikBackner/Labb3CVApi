@@ -1,5 +1,6 @@
 ﻿using Labb3CVApi.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace Labb3CVApi
 {
@@ -9,46 +10,79 @@ namespace Labb3CVApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ✅ Lägg till CORS-policy så frontend får access
+         
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+
+           
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend",
+                options.AddPolicy("AllowLocalhostAndFrontend",
                     policy =>
                     {
-                        var frontendUrl = builder.Configuration["FrontendUrl"] ?? "https://localhost:7204";
-                        policy.WithOrigins(frontendUrl)
+                        var frontendUrl = builder.Configuration["FrontendUrl"] ?? "https://labb3cvfrontend.azurewebsites.net";
+
+                        policy.WithOrigins("http://localhost:5000", frontendUrl)
                               .AllowAnyMethod()
-                              .AllowAnyHeader();
+                              .AllowAnyHeader()
+                              .AllowCredentials();
                     });
             });
 
+          
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // ✅ Lägg till databasen (samma som frontend)
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
             builder.Services.AddDbContext<CvDbContext>(options =>
-            {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-            });
+                options.UseSqlServer(connectionString));
 
             var app = builder.Build();
 
-            // ✅ Använd CORS-policy
-            app.UseCors("AllowFrontend");
+            app.UseCors("AllowLocalhostAndFrontend");
 
-            if (app.Environment.IsDevelopment())
+            app.UseExceptionHandler(errorApp =>
+            {
+                errorApp.Run(async context =>
+                {
+                    var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+                    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+                    if (exceptionHandlerPathFeature?.Error is not null)
+                    {
+                        logger.LogError(exceptionHandlerPathFeature.Error, "🔥 Ett fel uppstod!");
+
+                        context.Response.StatusCode = 500;
+                        context.Response.ContentType = "application/json";
+
+                        var errorResponse = new
+                        {
+                            Message = "Ett oväntat fel inträffade.",
+                            Details = exceptionHandlerPathFeature.Error.Message
+                        };
+
+                        await context.Response.WriteAsJsonAsync(errorResponse);
+                    }
+                });
+            });
+
+            if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+            app.MapGet("/health", () => Results.Ok("API is running")).WithTags("Health Check");
+
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+
             app.Run();
         }
     }
 }
-
-

@@ -19,14 +19,12 @@ namespace Labb3CVApi.Controllers
             _context = context;
         }
 
-        // GET: api/Skills
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Skill>>> GetSkills()
         {
             return await _context.Skills.ToListAsync();
         }
 
-        // GET: api/Skills/id
         [HttpGet("{id}")]
         public async Task<ActionResult<Skill>> GetSkill(int id)
         {
@@ -40,7 +38,6 @@ namespace Labb3CVApi.Controllers
             return skill;
         }
 
-        // POST: api/Skills
         [HttpPost]
         public async Task<ActionResult<Skill>> PostSkill(Skill skill)
         {
@@ -50,7 +47,6 @@ namespace Labb3CVApi.Controllers
             return CreatedAtAction(nameof(GetSkill), new { id = skill.Id }, skill);
         }
 
-        // PUT: api/Skills/id
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSkill(int id, Skill skill)
         {
@@ -77,7 +73,6 @@ namespace Labb3CVApi.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Skills/id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSkill(int id)
         {

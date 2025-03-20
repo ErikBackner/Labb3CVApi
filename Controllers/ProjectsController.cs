@@ -19,14 +19,12 @@ namespace Labb3CVApi.Controllers
             _context = context;
         }
 
-        // GET: api/Projects
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Project>>> GetProjects()
         {
             return await _context.Projects.ToListAsync();
         }
 
-        // GET: api/Projects/id
         [HttpGet("{id}")]
         public async Task<ActionResult<Project>> GetProject(int id)
         {
@@ -40,7 +38,6 @@ namespace Labb3CVApi.Controllers
             return project;
         }
 
-        // POST: api/Projects
         [HttpPost]
         public async Task<ActionResult<Project>> PostProject(Project project)
         {
@@ -50,7 +47,6 @@ namespace Labb3CVApi.Controllers
             return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
         }
 
-        // PUT: api/Projects/id
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProject(int id, Project project)
         {
@@ -77,7 +73,6 @@ namespace Labb3CVApi.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Projects/id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
